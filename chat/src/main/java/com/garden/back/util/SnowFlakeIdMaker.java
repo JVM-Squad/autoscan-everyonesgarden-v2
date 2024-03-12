@@ -1,17 +1,18 @@
 package com.garden.back.util;
 
+import org.springframework.stereotype.Component;
+
 import java.net.NetworkInterface;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Enumeration;
 
+@Component
 public class SnowFlakeIdMaker {
 
-    private static final int UNUSED_BITS = 1;
     private static final int EPOCH_BITS = 41;
     private static final int NODE_ID_BITS = 10;
     private static final int SEQUENCE_BITS = 12;
-
     private static final long MAX_NODE_ID = (1L << NODE_ID_BITS) - 1;
     private static final long MAX_SEQUENCE = (1L << SEQUENCE_BITS) - 1;
 
@@ -24,19 +25,7 @@ public class SnowFlakeIdMaker {
     private volatile long lastTimestamp = -1L;
     private volatile long sequence = 0L;
 
-    public SnowFlakeIdMaker(long nodeId, long customEpoch) {
-        if (nodeId < 0 || nodeId > MAX_NODE_ID) {
-            throw new IllegalArgumentException(String.format("NodeId must be between %d and %d", 0, MAX_NODE_ID));
-        }
-        this.nodeId = nodeId;
-        this.customEpoch = customEpoch;
-    }
-
-    public SnowFlakeIdMaker(long nodeId) {
-        this(nodeId, DEFAULT_CUSTOM_EPOCH);
-    }
-
-    public SnowFlakeIdMaker() {
+    private SnowFlakeIdMaker() {
         this.nodeId = createNodeId();
         this.customEpoch = DEFAULT_CUSTOM_EPOCH;
     }
@@ -95,17 +84,6 @@ public class SnowFlakeIdMaker {
         }
         nodeId = nodeId & MAX_NODE_ID; //범위 제한
         return nodeId;
-    }
-
-    public long[] parse(long id) {
-        long maskNodeId = ((1L << NODE_ID_BITS) - 1) << SEQUENCE_BITS;
-        long maskSequence = (1L << SEQUENCE_BITS) - 1;
-
-        long timestamp = (id >> (NODE_ID_BITS + SEQUENCE_BITS)) + customEpoch;
-        long nodeId = (id & maskNodeId) >> SEQUENCE_BITS;
-        long sequence = id & maskSequence;
-
-        return new long[]{timestamp, nodeId, sequence};
     }
 
     @Override
