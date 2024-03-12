@@ -18,9 +18,8 @@ public class GardenChatMessage {
     protected GardenChatMessage() {
     }
 
-    @Column(name = "chat_message_id", nullable = false)
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "chat_message_id", nullable = false)
     private Long chatMessageId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -41,15 +40,18 @@ public class GardenChatMessage {
     private LocalDateTime createdAt;
 
     private GardenChatMessage(
-            GardenChatRoom chatRoom,
-            Long memberId,
-            String contents,
-            boolean readOrNot
+        Long chatMessageId,
+        GardenChatRoom chatRoom,
+        Long memberId,
+        String contents,
+        boolean readOrNot
     ) {
+        Assert.notNull(chatMessageId, "chatMessageId는 null일 수 없습니다.");
         Assert.notNull(chatRoom, "Chat Room은 null일 수 없습니다.");
         Assert.isTrue(memberId > 0, "유저 아이디는 0이거나 0보다 작을 수 없습니다.");
         Assert.notNull(contents, "메세지 내용은 null일 수 없습니다.");
 
+        this.chatMessageId = chatMessageId;
         this.chatRoom = chatRoom;
         this.memberId = memberId;
         this.contents = contents;
@@ -57,39 +59,45 @@ public class GardenChatMessage {
     }
 
     public static GardenChatMessage of(
-            GardenChatRoom chatRoom,
-            Long memberId,
-            String contents,
-            boolean readOrNot
+        Long chatMessageId,
+        GardenChatRoom chatRoom,
+        Long memberId,
+        String contents,
+        boolean readOrNot
     ) {
         return new GardenChatMessage(
-                chatRoom,
-                memberId,
-                contents,
-                readOrNot
+            chatMessageId,
+            chatRoom,
+            memberId,
+            contents,
+            readOrNot
         );
 
     }
 
     public static GardenChatMessage toReadGardenChatMessage(
-            GardenChatMessageDomainParam gardenChatMessageDomainParam
+        Long chatMessageId,
+        GardenChatMessageDomainParam gardenChatMessageDomainParam
     ) {
         return new GardenChatMessage(
-                GardenChatRoom.of(gardenChatMessageDomainParam.roomId()),
-                gardenChatMessageDomainParam.memberId(),
-                gardenChatMessageDomainParam.contents(),
-                true
+            chatMessageId,
+            GardenChatRoom.of(gardenChatMessageDomainParam.roomId()),
+            gardenChatMessageDomainParam.memberId(),
+            gardenChatMessageDomainParam.contents(),
+            true
         );
     }
 
     public static GardenChatMessage toNotReadGardenChatMessage(
-            GardenChatMessageDomainParam gardenChatMessageDomainParam
+        Long chatMessageId,
+        GardenChatMessageDomainParam gardenChatMessageDomainParam
     ) {
         return new GardenChatMessage(
-                GardenChatRoom.of(gardenChatMessageDomainParam.roomId()),
-                gardenChatMessageDomainParam.memberId(),
-                gardenChatMessageDomainParam.contents(),
-                false
+            chatMessageId,
+            GardenChatRoom.of(gardenChatMessageDomainParam.roomId()),
+            gardenChatMessageDomainParam.memberId(),
+            gardenChatMessageDomainParam.contents(),
+            false
         );
     }
 
