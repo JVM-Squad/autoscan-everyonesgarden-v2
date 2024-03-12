@@ -15,6 +15,7 @@ import com.garden.back.garden.service.dto.response.GardenChatRoomsFindResults;
 import com.garden.back.garden.service.dto.response.GardenChatMessageSendResult;
 import com.garden.back.garden.service.dto.response.GardenChatMessagesGetResults;
 import com.garden.back.util.PageMaker;
+import com.garden.back.util.SnowFlakeIdMaker;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -29,12 +30,18 @@ public class GardenChatService {
     private final GardenChatRoomInfoRepository gardenChatRoomInfoRepository;
     private final GardenChatRoomEntryRepository gardenChatRoomEntryRepository;
     private final WebSocketInfoRepository webSocketInfoRepository;
+    private final SnowFlakeIdMaker snowFlakeIdMaker;
 
-    public GardenChatService(GardenChatMessageRepository gardenChatMessageRepository, GardenChatRoomInfoRepository gardenChatRoomInfoRepository, GardenChatRoomEntryRepository gardenChatRoomEntryRepository, WebSocketInfoRepository webSocketInfoRepository) {
+    public GardenChatService(
+        GardenChatMessageRepository gardenChatMessageRepository,
+        GardenChatRoomInfoRepository gardenChatRoomInfoRepository,
+        GardenChatRoomEntryRepository gardenChatRoomEntryRepository,
+        WebSocketInfoRepository webSocketInfoRepository, SnowFlakeIdMaker snowFlakeIdMaker) {
         this.gardenChatMessageRepository = gardenChatMessageRepository;
         this.gardenChatRoomInfoRepository = gardenChatRoomInfoRepository;
         this.gardenChatRoomEntryRepository = gardenChatRoomEntryRepository;
         this.webSocketInfoRepository = webSocketInfoRepository;
+        this.snowFlakeIdMaker = snowFlakeIdMaker;
     }
 
     @Transactional
@@ -43,16 +50,18 @@ public class GardenChatService {
 
         GardenChatMessageDomainParam gardenChatMessageDomainParam = param.toGardenChatMessageDomainParam();
         Long partnerId = gardenChatRoomInfoRepository.findPartnerId(param.roomId(), param.memberId()).getMemberId();
+        Long chatMessageId = snowFlakeIdMaker.nextId();
+
         if (gardenChatRoomEntryRepository.isContainsRoomIdAndMember(param.roomId(), partnerId)) {
             return GardenChatMessageSendResult.to(
                 gardenChatMessageRepository.save(
-                    GardenChatMessage.toReadGardenChatMessage(gardenChatMessageDomainParam))
+                    GardenChatMessage.toReadGardenChatMessage(chatMessageId, gardenChatMessageDomainParam))
             );
         }
 
         return GardenChatMessageSendResult.to(
             gardenChatMessageRepository.save(
-                GardenChatMessage.toNotReadGardenChatMessage(gardenChatMessageDomainParam)
+                GardenChatMessage.toNotReadGardenChatMessage(chatMessageId, gardenChatMessageDomainParam)
             )
         );
 
