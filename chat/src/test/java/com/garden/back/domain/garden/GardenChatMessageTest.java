@@ -17,6 +17,7 @@ class GardenChatMessageTest {
     void throwException_nullOrEmpty_imageUrl() {
         assertThrows(IllegalArgumentException.class,
                 () -> GardenChatMessage.of(
+                    1L,
                         null,
                         1L,
                         "안녕",
@@ -30,6 +31,7 @@ class GardenChatMessageTest {
     void throwException_zeroOrMinus_memberId(Long memberId) {
         assertThrows(IllegalArgumentException.class,
                 () -> GardenChatMessage.of(
+                    1L,
                         GardenChatRoom.of(1L),
                         memberId,
                         "안녕",
@@ -43,10 +45,25 @@ class GardenChatMessageTest {
     void throwException_nullOrEmpty_chatContent(String chatContent) {
         assertThrows(IllegalArgumentException.class,
                 () -> GardenChatMessage.of(
+                    1L,
                         GardenChatRoom.of(1L),
                         1L,
                         chatContent,
                         false
                 ));
+    }
+
+    @DisplayName("chatMessageId가 null이면 예외를 던진다.")
+    @ParameterizedTest
+    @NullSource
+    void throwException_nullOrEmpty_chatMessageId(Long chatMessageId) {
+        assertThrows(IllegalArgumentException.class,
+            () -> GardenChatMessage.of(
+                chatMessageId,
+                GardenChatRoom.of(1L),
+                1L,
+                "안녕하세요",
+                false
+            ));
     }
 }

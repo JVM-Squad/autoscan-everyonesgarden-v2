@@ -10,6 +10,7 @@ import com.garden.back.garden.repository.chatroominfo.GardenChatRoomInfoReposito
 import com.garden.back.garden.service.GardenChatRoomService;
 import com.garden.back.garden.service.dto.request.*;
 import com.garden.back.global.exception.EntityNotFoundException;
+import com.garden.back.util.SnowFlakeIdMaker;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @Transactional
-class GardenChatRoomServiceTest extends IntegrationTestSupport{
+class GardenChatRoomServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private GardenChatRoomService gardenChatRoomService;
@@ -38,6 +39,9 @@ class GardenChatRoomServiceTest extends IntegrationTestSupport{
     @Autowired
     private GardenChatRoomEntryRepository gardenChatRoomEntryRepository;
 
+    @Autowired
+    private SnowFlakeIdMaker snowFlakeIdMaker;
+
     @DisplayName("해당 게시글에 대한 채팅방을 생성할 수 있다.")
     @Test
     void createGardenChatRoom() {
@@ -50,24 +54,24 @@ class GardenChatRoomServiceTest extends IntegrationTestSupport{
 
         // Then
         chatRoomInfos.stream()
-                .filter(GardenChatRoomInfo::isWriter)
-                .forEach(
-                        chatRoomInfo -> {
-                            assertThat(chatRoomInfo.getPostId()).isEqualTo(chatRoomCreateParam.postId());
-                            assertThat(chatRoomInfo.getMemberId()).isEqualTo(chatRoomCreateParam.writerId());
-                            assertThat(chatRoomInfo.getChatRoom().getChatRoomId()).isEqualTo(chatRoomId);
-                        }
-                );
+            .filter(GardenChatRoomInfo::isWriter)
+            .forEach(
+                chatRoomInfo -> {
+                    assertThat(chatRoomInfo.getPostId()).isEqualTo(chatRoomCreateParam.postId());
+                    assertThat(chatRoomInfo.getMemberId()).isEqualTo(chatRoomCreateParam.writerId());
+                    assertThat(chatRoomInfo.getChatRoom().getChatRoomId()).isEqualTo(chatRoomId);
+                }
+            );
 
         chatRoomInfos.stream()
-                .filter(chatRoomInfo -> !chatRoomInfo.isWriter())
-                .forEach(
-                        chatRoomInfo -> {
-                            assertThat(chatRoomInfo.getPostId()).isEqualTo(chatRoomCreateParam.postId());
-                            assertThat(chatRoomInfo.getMemberId()).isEqualTo(chatRoomCreateParam.viewerId());
-                            assertThat(chatRoomInfo.getChatRoom().getChatRoomId()).isEqualTo(chatRoomId);
-                        }
-                );
+            .filter(chatRoomInfo -> !chatRoomInfo.isWriter())
+            .forEach(
+                chatRoomInfo -> {
+                    assertThat(chatRoomInfo.getPostId()).isEqualTo(chatRoomCreateParam.postId());
+                    assertThat(chatRoomInfo.getMemberId()).isEqualTo(chatRoomCreateParam.viewerId());
+                    assertThat(chatRoomInfo.getChatRoom().getChatRoomId()).isEqualTo(chatRoomId);
+                }
+            );
     }
 
     @DisplayName("해당 게시글에 대한 채팅방을 중복 생성하면 예외를 던진다.")
@@ -81,7 +85,7 @@ class GardenChatRoomServiceTest extends IntegrationTestSupport{
 
         // Then
         assertThatThrownBy(() -> gardenChatRoomService.createGardenChatRoom(chatRoomCreateParam))
-                .isInstanceOf(IllegalArgumentException.class);
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @DisplayName("채팅방에 입장하면 읽지 않은 메세지들이 모두 읽음처리 된다.")
@@ -95,8 +99,8 @@ class GardenChatRoomServiceTest extends IntegrationTestSupport{
         GardenChatRoomEntryParam gardenChatRoomEntryParam = new GardenChatRoomEntryParam(chatRoomId, memberId);
 
         GardenChatRoom gardenChatRoom = gardenChatRoomRepository.findById(chatRoomId).get();
-        gardenChatMessageRepository.save(ChatRoomFixture.partnerFirstGardenChatMessage(gardenChatRoom));
-        gardenChatMessageRepository.save(ChatRoomFixture.partnerSecondGardenChatMessage(gardenChatRoom));
+        gardenChatMessageRepository.save(ChatRoomFixture.partnerFirstGardenChatMessage(snowFlakeIdMaker.nextId(), gardenChatRoom));
+        gardenChatMessageRepository.save(ChatRoomFixture.partnerSecondGardenChatMessage(snowFlakeIdMaker.nextId(), gardenChatRoom));
 
         // When
         gardenChatRoomService.enterGardenChatRoom(gardenChatRoomEntryParam);
@@ -104,7 +108,7 @@ class GardenChatRoomServiceTest extends IntegrationTestSupport{
 
         // Then
         allPartnerMessages.forEach(
-                gardenChatMessage -> assertThat(gardenChatMessage.isReadOrNot()).isTrue()
+            gardenChatMessage -> assertThat(gardenChatMessage.isReadOrNot()).isTrue()
         );
     }
 
@@ -136,7 +140,7 @@ class GardenChatRoomServiceTest extends IntegrationTestSupport{
         // Then
         assertThat(gardenChatRoomRepository.findById(gardenChatRoomDeleteParam.chatRoomId())).isNotEmpty();
         assertThat(gardenChatRoomInfoRepository.findByRoomId(gardenChatRoomDeleteParam.chatRoomId()).stream()
-                .filter(GardenChatRoomInfo::isDeleted).toList().size()).isEqualTo(1);
+            .filter(GardenChatRoomInfo::isDeleted).toList().size()).isEqualTo(1);
     }
 
     @DisplayName("채팅방을 영구적으로 나가는 경우 모두 나가는 경우에는 채팅방은 삭제된다.")
@@ -154,7 +158,7 @@ class GardenChatRoomServiceTest extends IntegrationTestSupport{
         gardenChatRoomService.deleteChatRoom(gardenChatRoomDeleteParamAboutPartner);
 
         // Then
-        assertThatThrownBy(()-> gardenChatRoomRepository.getById(gardenChatRoomDeleteParam.chatRoomId())).isInstanceOf(EntityNotFoundException.class);
+        assertThatThrownBy(() -> gardenChatRoomRepository.getById(gardenChatRoomDeleteParam.chatRoomId())).isInstanceOf(EntityNotFoundException.class);
         assertThat(gardenChatRoomInfoRepository.findByRoomId(gardenChatRoomDeleteParam.chatRoomId()).size()).isZero();
     }
 
@@ -186,8 +190,8 @@ class GardenChatRoomServiceTest extends IntegrationTestSupport{
         gardenChatRoomService.reportChatRoom(gardenChatReportParam);
 
         // Then
-        assertThatThrownBy(()-> gardenChatRoomService.reportChatRoom(gardenChatReportParam))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> gardenChatRoomService.reportChatRoom(gardenChatReportParam))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @DisplayName("텃밭 분양 게시글의 아이디와 이를 보고 있는 해당 사용자의 아이디가 주어질 때 " +
