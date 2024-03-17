@@ -12,31 +12,35 @@ import java.util.Optional;
 @Repository
 public class GardenChatMessageRepositoryImpl implements GardenChatMessageRepository {
 
-    private final GardenChatMessageJpaRepository gardenChatMessageJpaRepository;
+    private final GardenChatMessageMongoRepository gardenChatMessageMongoRepository;
+    private final GardenChatMessageQueryRepository gardenChatMessageQueryRepository;
 
-    public GardenChatMessageRepositoryImpl(GardenChatMessageJpaRepository gardenChatMessageJpaRepository) {
-        this.gardenChatMessageJpaRepository = gardenChatMessageJpaRepository;
+    public GardenChatMessageRepositoryImpl(GardenChatMessageJpaRepository gardenChatMessageJpaRepository, GardenChatMessageMongoRepository gardenChatMessageMongoRepository, GardenChatMessageQueryRepository gardenChatMessageQueryRepository) {
+        this.gardenChatMessageMongoRepository = gardenChatMessageMongoRepository;
+        this.gardenChatMessageQueryRepository = gardenChatMessageQueryRepository;
     }
 
     @Override
     public void markMessagesAsRead(Long roomId,
                                    Long partnerId) {
-        gardenChatMessageJpaRepository.markMessagesAsRead(roomId, partnerId);
+        GardenChatMessage gardenChatMessage = gardenChatMessageMongoRepository.getByChatRoomIdAndPartnerId(roomId, partnerId);
+        gardenChatMessage.readMessage();
+        gardenChatMessageMongoRepository.save(gardenChatMessage);
     }
 
     @Override
     public GardenChatMessage save(GardenChatMessage chatMessage) {
-        return gardenChatMessageJpaRepository.save(chatMessage);
+        return gardenChatMessageMongoRepository.save(chatMessage);
     }
 
     @Override
     public List<GardenChatMessage> findAll() {
-        return gardenChatMessageJpaRepository.findAll();
+        return gardenChatMessageMongoRepository.findAll();
     }
 
     @Override
     public Optional<GardenChatMessage> findById(Long chatMessageId) {
-        return gardenChatMessageJpaRepository.findById(chatMessageId);
+        return gardenChatMessageMongoRepository.findByChatMessageId(chatMessageId);
     }
 
     @Override
@@ -46,16 +50,16 @@ public class GardenChatMessageRepositoryImpl implements GardenChatMessageReposit
 
     @Override
     public Slice<GardenChatMessage> getGardenChatMessage(Long chatRoomId, Pageable pageable) {
-        return gardenChatMessageJpaRepository.getGardenChatMessage(chatRoomId, pageable);
+        return gardenChatMessageMongoRepository.getGardenChatMessage(chatRoomId, pageable);
     }
 
     @Override
     public Slice<ChatRoomFindRepositoryResponse> findChatRooms(Long memberId, Pageable pageable) {
-        return gardenChatMessageJpaRepository.findChatRooms(memberId, pageable);
+        return gardenChatMessageQueryRepository.findChatRooms(memberId, pageable);
     }
 
     @Override
     public String getContentsById(Long chatMessageId) {
-        return gardenChatMessageJpaRepository.getContentsById(chatMessageId);
+        return gardenChatMessageMongoRepository.getContentsByChatMessageId(chatMessageId);
     }
 }
